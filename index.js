@@ -534,7 +534,31 @@ function buildSettingsHtml() {
 // EVENT HANDLERS
 // ============================
 
-function onMessageRendered(messageId) {
+function cleanSignalTags(element) {
+    // Remove signal tags from rendered HTML - handles tags split across HTML elements
+    const html = element.html();
+    const cleaned = html
+        .replace(/\[PTSD\+\d+\]/gi, '')
+        .replace(/\[AGGR\+\d+\]/gi, '')
+        .replace(/\[DAY\+\d+\]/gi, '')
+        .replace(/\[ADRENALINE_SATISFIED\]/gi, '')
+        .replace(/\[AGGRESSION_OUTBURST\]/gi, '')
+        .replace(/\[ROLL_DESC:[^\]]*\]/gi, '')
+        .replace(/\[CLINICAL:[^\]]*\]/gi, '')
+        .replace(/\[PTSD_NOTE:[^\]]*\]/gi, '')
+        .replace(/\[AGGR_NOTE:[^\]]*\]/gi, '')
+        // Also catch tags that got split across lines/elements
+        .replace(/\[ROLL_DESC:[\s\S]*?\]/gi, '')
+        .replace(/\[CLINICAL:[\s\S]*?\]/gi, '')
+        .replace(/\[PTSD_NOTE:[\s\S]*?\]/gi, '')
+        .replace(/\[AGGR_NOTE:[\s\S]*?\]/gi, '')
+        // Clean up empty paragraphs left behind
+        .replace(/<p>\s*<\/p>/gi, '')
+        .replace(/<br\s*\/?>\s*<br\s*\/?>\s*<br\s*\/?>/gi, '<br>');
+    element.html(cleaned);
+}
+
+function processMessage(messageId) {
     try {
         const settings = getSettings();
         if (!settings.enabled) return;
@@ -553,44 +577,13 @@ function onMessageRendered(messageId) {
             signalAggr = signals.aggr;
             dayAdv = signals.dayAdvance;
 
-            if (signals.cleaned !== message.mes) {
-                const msgDiv = $(`#chat .mes[mesid="${messageId}"] .mes_text`);
-                if (msgDiv.length) {
-                    msgDiv.html(msgDiv.html()
-                        .replace(/\[PTSD\+\d+\]/gi, '')
-                        .replace(/\[AGGR\+\d+\]/gi, '')
-                        .replace(/\[DAY\+\d+\]/gi, '')
-                        .replace(/\[ADRENALINE_SATISFIED\]/gi, '')
-                        .replace(/\[AGGRESSION_OUTBURST\]/gi, '')
-                        .replace(/\[ROLL_DESC:\s*.*?\]/gsi, '')
-                        .replace(/\[CLINICAL:\s*.*?\]/gsi, '')
-                        .replace(/\[PTSD_NOTE:\s*.*?\]/gsi, '')
-                        .replace(/\[AGGR_NOTE:\s*.*?\]/gsi, '')
-                    );
-                }
-            }
-
             // Store model-written descriptions
-            if (signals.rollDesc) {
-                const s = getState();
-                s.rollDesc = signals.rollDesc;
-                saveState(s);
-            }
-            if (signals.clinicalNote) {
-                const s = getState();
-                s.clinicalNote = signals.clinicalNote;
-                saveState(s);
-            }
-            if (signals.ptsdNote) {
-                const s = getState();
-                s.ptsdNote = signals.ptsdNote;
-                saveState(s);
-            }
-            if (signals.aggrNote) {
-                const s = getState();
-                s.aggrNote = signals.aggrNote;
-                saveState(s);
-            }
+            const s = getState();
+            if (signals.rollDesc) s.rollDesc = signals.rollDesc;
+            if (signals.clinicalNote) s.clinicalNote = signals.clinicalNote;
+            if (signals.ptsdNote) s.ptsdNote = signals.ptsdNote;
+            if (signals.aggrNote) s.aggrNote = signals.aggrNote;
+            saveState(s);
 
             if (signals.adrenSatisfied) {
                 const s = getState();
@@ -609,18 +602,51 @@ function onMessageRendered(messageId) {
         }
 
         const state = tick(signalPtsd, signalAggr);
-        const html = renderTracker(state);
-        const msgBlock = $(`#chat .mes[mesid="${messageId}"] .mes_text`);
-        if (msgBlock.length) {
-            msgBlock.find('.bpt-card').remove();
-            msgBlock.append(html);
-        }
+
+        // Clean tags and render - with delay to ensure DOM is ready
+        setTimeout(() => {
+            const msgBlock = $(`#chat .mes[mesid="${messageId}"] .mes_text`);
+            if (msgBlock.length) {
+                // Clean signal tags from visible text
+                cleanSignalTags(msgBlock);
+                // Remove old tracker and append new one
+                msgBlock.find('.bpt-card').remove();
+                msgBlock.append(renderTracker(state));
+            }
+        }, 100);
 
         updateSettingsPanel(state);
         console.log(`[${EXT_NAME}] Tick: phase=${state.phase} day=${state.phaseDay} roll=${state.lastRollValue} result=${state.lastResult?.label} ptsd=${state.ptsd} aggr=${state.aggression}`);
 
     } catch (err) {
-        console.error(`[${EXT_NAME}] onMessageRendered error:`, err);
+        console.error(`[${EXT_NAME}] processMessage error:`, err);
+    }
+}
+
+// Re-render tracker on existing messages (after swipe/edit)
+function reRenderMessage(messageId) {
+    try {
+        const settings = getSettings();
+        if (!settings.enabled) return;
+
+        const context = getContext();
+        if (!context.chatId) return;
+
+        const message = context.chat[messageId];
+        if (!message || message.is_user) return;
+
+        const state = getState();
+
+        setTimeout(() => {
+            const msgBlock = $(`#chat .mes[mesid="${messageId}"] .mes_text`);
+            if (msgBlock.length) {
+                cleanSignalTags(msgBlock);
+                msgBlock.find('.bpt-card').remove();
+                msgBlock.append(renderTracker(state));
+            }
+        }, 150);
+    } catch (err) {
+        console.error(`[${EXT_NAME}] reRenderMessage error:`, err);
     }
 }
 
@@ -709,13 +735,30 @@ jQuery(async () => {
         });
 
         if (event_types.CHARACTER_MESSAGE_RENDERED) {
-            eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, onMessageRendered);
+            eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, processMessage);
             console.log(`[${EXT_NAME}] Hooked CHARACTER_MESSAGE_RENDERED`);
         } else if (event_types.MESSAGE_RECEIVED) {
-            eventSource.on(event_types.MESSAGE_RECEIVED, onMessageRendered);
+            eventSource.on(event_types.MESSAGE_RECEIVED, processMessage);
             console.log(`[${EXT_NAME}] Hooked MESSAGE_RECEIVED (fallback)`);
         } else {
             console.warn(`[${EXT_NAME}] No suitable message event found!`);
+        }
+
+        // Re-render hooks for swipe/edit
+        const reRenderEvents = ['MESSAGE_SWIPED', 'MESSAGE_UPDATED', 'MESSAGE_EDITED', 'CHAT_CHANGED'];
+        for (const evName of reRenderEvents) {
+            if (event_types[evName]) {
+                eventSource.on(event_types[evName], (data) => {
+                    // Find last AI message and re-render
+                    const context = getContext();
+                    if (!context.chat) return;
+                    const lastIdx = context.chat.length - 1;
+                    if (lastIdx >= 0 && !context.chat[lastIdx].is_user) {
+                        reRenderMessage(lastIdx);
+                    }
+                });
+                console.log(`[${EXT_NAME}] Hooked ${evName} for re-render`);
+            }
         }
 
         const promptEvents = ['CHAT_COMPLETION_PROMPT_READY', 'GENERATE_BEFORE_COMBINE_PROMPTS', 'GENERATE_AFTER_COMBINE_PROMPTS'];
