@@ -5,10 +5,6 @@ const EXT_NAME = 'bipolar-tracker';
 
 console.log(`[${EXT_NAME}] Script loaded, starting initialization...`);
 
-// ============================
-// DEFAULT STATE
-// ============================
-
 const DEFAULT_SETTINGS = {
     enabled: true,
     injectPrompt: true,
@@ -27,6 +23,10 @@ const DEFAULT_STATE = {
     lastRolls: [],
     lastResult: null,
     lastRollValue: null,
+    rollDesc: '',
+    clinicalNote: '',
+    ptsdNote: '',
+    aggrNote: '',
     aggressionJustExploded: false,
 };
 
@@ -35,41 +35,41 @@ const DEFAULT_STATE = {
 // ============================
 
 const MANIA_TABLE_BASE = [
-    { min: 1, max: 4, id: 'void', label: 'VOID', color: '#666' },
-    { min: 5, max: 8, id: 'adrenaline', label: 'ADRENALINE HUNGER', color: '#ff2d95' },
-    { min: 9, max: 12, id: 'chaotic', label: 'CHAOTIC ACTIVITY', color: '#c8ff00' },
-    { min: 13, max: 15, id: 'substance', label: 'SUBSTANCE CRAVING', color: '#ff9d3a' },
-    { min: 16, max: 18, id: 'impulsive', label: 'IMPULSIVE BEHAVIOR', color: '#c678dd' },
-    { min: 19, max: 20, id: 'wildcard', label: 'WILD CARD', color: '#e5c07b' },
+    { min: 1, max: 4, id: 'void', label: 'ПУСТОТА', color: '#666' },
+    { min: 5, max: 8, id: 'adrenaline', label: 'ЖАЖДА АДРЕНАЛИНА', color: '#ff2d95' },
+    { min: 9, max: 12, id: 'chaotic', label: 'ХАОТИЧНАЯ ДЕЯТЕЛЬНОСТЬ', color: '#c8ff00' },
+    { min: 13, max: 15, id: 'substance', label: 'ТЯГА К ВЕЩЕСТВАМ', color: '#ff9d3a' },
+    { min: 16, max: 18, id: 'impulsive', label: 'ИМПУЛЬСИВНОЕ ПОВЕДЕНИЕ', color: '#c678dd' },
+    { min: 19, max: 20, id: 'wildcard', label: 'ДИКАЯ КАРТА', color: '#e5c07b' },
 ];
 
 const DEPRESSION_TABLE_BASE = [
-    { min: 1, max: 7, id: 'static', label: 'STATIC', color: '#555' },
-    { min: 8, max: 11, id: 'selfhate', label: 'SELF-HATRED WAVE', color: '#00fff7' },
-    { min: 12, max: 14, id: 'indifference', label: 'TOTAL INDIFFERENCE', color: '#444' },
-    { min: 15, max: 17, id: 'selfharm', label: 'SELF-HARM URGE', color: '#e06c75' },
-    { min: 18, max: 20, id: 'wildcard', label: 'WILD CARD', color: '#e5c07b' },
+    { min: 1, max: 7, id: 'static', label: 'СТАТИКА', color: '#555' },
+    { min: 8, max: 11, id: 'selfhate', label: 'ВОЛНА НЕНАВИСТИ К СЕБЕ', color: '#00fff7' },
+    { min: 12, max: 14, id: 'indifference', label: 'ПОЛНОЕ РАВНОДУШИЕ', color: '#444' },
+    { min: 15, max: 17, id: 'selfharm', label: 'ПОЗЫВ К САМОПОВРЕЖДЕНИЮ', color: '#e06c75' },
+    { min: 18, max: 20, id: 'wildcard', label: 'ДИКАЯ КАРТА', color: '#e5c07b' },
 ];
 
 function getManiaTable(ptsd) {
     if (ptsd >= 7) {
         return [
-            { min: 1, max: 2, id: 'void', label: 'VOID', color: '#666' },
-            { min: 3, max: 12, id: 'adrenaline', label: 'ADRENALINE HUNGER', color: '#ff2d95' },
-            { min: 13, max: 14, id: 'chaotic', label: 'CHAOTIC ACTIVITY', color: '#c8ff00' },
-            { min: 15, max: 16, id: 'substance', label: 'SUBSTANCE CRAVING', color: '#ff9d3a' },
-            { min: 17, max: 18, id: 'impulsive', label: 'IMPULSIVE BEHAVIOR', color: '#c678dd' },
-            { min: 19, max: 20, id: 'wildcard', label: 'WILD CARD', color: '#e5c07b' },
+            { min: 1, max: 2, id: 'void', label: 'ПУСТОТА', color: '#666' },
+            { min: 3, max: 12, id: 'adrenaline', label: 'ЖАЖДА АДРЕНАЛИНА', color: '#ff2d95' },
+            { min: 13, max: 14, id: 'chaotic', label: 'ХАОТИЧНАЯ ДЕЯТЕЛЬНОСТЬ', color: '#c8ff00' },
+            { min: 15, max: 16, id: 'substance', label: 'ТЯГА К ВЕЩЕСТВАМ', color: '#ff9d3a' },
+            { min: 17, max: 18, id: 'impulsive', label: 'ИМПУЛЬСИВНОЕ ПОВЕДЕНИЕ', color: '#c678dd' },
+            { min: 19, max: 20, id: 'wildcard', label: 'ДИКАЯ КАРТА', color: '#e5c07b' },
         ];
     }
     if (ptsd >= 4) {
         return [
-            { min: 1, max: 3, id: 'void', label: 'VOID', color: '#666' },
-            { min: 4, max: 10, id: 'adrenaline', label: 'ADRENALINE HUNGER', color: '#ff2d95' },
-            { min: 11, max: 13, id: 'chaotic', label: 'CHAOTIC ACTIVITY', color: '#c8ff00' },
-            { min: 14, max: 16, id: 'substance', label: 'SUBSTANCE CRAVING', color: '#ff9d3a' },
-            { min: 17, max: 18, id: 'impulsive', label: 'IMPULSIVE BEHAVIOR', color: '#c678dd' },
-            { min: 19, max: 20, id: 'wildcard', label: 'WILD CARD', color: '#e5c07b' },
+            { min: 1, max: 3, id: 'void', label: 'ПУСТОТА', color: '#666' },
+            { min: 4, max: 10, id: 'adrenaline', label: 'ЖАЖДА АДРЕНАЛИНА', color: '#ff2d95' },
+            { min: 11, max: 13, id: 'chaotic', label: 'ХАОТИЧНАЯ ДЕЯТЕЛЬНОСТЬ', color: '#c8ff00' },
+            { min: 14, max: 16, id: 'substance', label: 'ТЯГА К ВЕЩЕСТВАМ', color: '#ff9d3a' },
+            { min: 17, max: 18, id: 'impulsive', label: 'ИМПУЛЬСИВНОЕ ПОВЕДЕНИЕ', color: '#c678dd' },
+            { min: 19, max: 20, id: 'wildcard', label: 'ДИКАЯ КАРТА', color: '#e5c07b' },
         ];
     }
     return MANIA_TABLE_BASE;
@@ -78,20 +78,20 @@ function getManiaTable(ptsd) {
 function getDepressionTable(ptsd) {
     if (ptsd >= 7) {
         return [
-            { min: 1, max: 4, id: 'static', label: 'STATIC', color: '#555' },
-            { min: 5, max: 8, id: 'selfhate', label: 'SELF-HATRED WAVE', color: '#00fff7' },
-            { min: 9, max: 11, id: 'indifference', label: 'TOTAL INDIFFERENCE', color: '#444' },
-            { min: 12, max: 17, id: 'selfharm', label: 'SELF-HARM URGE', color: '#e06c75' },
-            { min: 18, max: 20, id: 'wildcard', label: 'WILD CARD', color: '#e5c07b' },
+            { min: 1, max: 4, id: 'static', label: 'СТАТИКА', color: '#555' },
+            { min: 5, max: 8, id: 'selfhate', label: 'ВОЛНА НЕНАВИСТИ К СЕБЕ', color: '#00fff7' },
+            { min: 9, max: 11, id: 'indifference', label: 'ПОЛНОЕ РАВНОДУШИЕ', color: '#444' },
+            { min: 12, max: 17, id: 'selfharm', label: 'ПОЗЫВ К САМОПОВРЕЖДЕНИЮ', color: '#e06c75' },
+            { min: 18, max: 20, id: 'wildcard', label: 'ДИКАЯ КАРТА', color: '#e5c07b' },
         ];
     }
     if (ptsd >= 4) {
         return [
-            { min: 1, max: 5, id: 'static', label: 'STATIC', color: '#555' },
-            { min: 6, max: 10, id: 'selfhate', label: 'SELF-HATRED WAVE', color: '#00fff7' },
-            { min: 11, max: 13, id: 'indifference', label: 'TOTAL INDIFFERENCE', color: '#444' },
-            { min: 14, max: 17, id: 'selfharm', label: 'SELF-HARM URGE', color: '#e06c75' },
-            { min: 18, max: 20, id: 'wildcard', label: 'WILD CARD', color: '#e5c07b' },
+            { min: 1, max: 5, id: 'static', label: 'СТАТИКА', color: '#555' },
+            { min: 6, max: 10, id: 'selfhate', label: 'ВОЛНА НЕНАВИСТИ К СЕБЕ', color: '#00fff7' },
+            { min: 11, max: 13, id: 'indifference', label: 'ПОЛНОЕ РАВНОДУШИЕ', color: '#444' },
+            { min: 14, max: 17, id: 'selfharm', label: 'ПОЗЫВ К САМОПОВРЕЖДЕНИЮ', color: '#e06c75' },
+            { min: 18, max: 20, id: 'wildcard', label: 'ДИКАЯ КАРТА', color: '#e5c07b' },
         ];
     }
     return DEPRESSION_TABLE_BASE;
@@ -127,16 +127,9 @@ function getState() {
         const context = getContext();
         const chatId = context.chatId;
         if (!chatId) return { ...DEFAULT_STATE };
-
-        if (!extension_settings[EXT_NAME]) {
-            extension_settings[EXT_NAME] = { ...DEFAULT_SETTINGS, chats: {} };
-        }
-        if (!extension_settings[EXT_NAME].chats) {
-            extension_settings[EXT_NAME].chats = {};
-        }
-        if (!extension_settings[EXT_NAME].chats[chatId]) {
-            extension_settings[EXT_NAME].chats[chatId] = { ...DEFAULT_STATE };
-        }
+        if (!extension_settings[EXT_NAME]) extension_settings[EXT_NAME] = { ...DEFAULT_SETTINGS, chats: {} };
+        if (!extension_settings[EXT_NAME].chats) extension_settings[EXT_NAME].chats = {};
+        if (!extension_settings[EXT_NAME].chats[chatId]) extension_settings[EXT_NAME].chats[chatId] = { ...DEFAULT_STATE };
         return extension_settings[EXT_NAME].chats[chatId];
     } catch (err) {
         console.error(`[${EXT_NAME}] getState error:`, err);
@@ -157,9 +150,7 @@ function saveState(state) {
 }
 
 function getSettings() {
-    if (!extension_settings[EXT_NAME]) {
-        extension_settings[EXT_NAME] = { ...DEFAULT_SETTINGS, chats: {} };
-    }
+    if (!extension_settings[EXT_NAME]) extension_settings[EXT_NAME] = { ...DEFAULT_SETTINGS, chats: {} };
     return extension_settings[EXT_NAME];
 }
 
@@ -175,9 +166,8 @@ function tick(signalPtsd = 0, signalAggr = 0) {
     state.ptsd = Math.min(10, Math.max(0, state.ptsd + signalPtsd));
     state.aggression = Math.min(10, Math.max(0, state.aggression + signalAggr));
 
-    // Forced aggression at 7+
     if (state.aggression >= 7 && state.phase !== 'depression') {
-        state.lastResult = { id: 'forced_aggression', label: 'FORCED AGGRESSION EXPLOSION', color: '#e06c75' };
+        state.lastResult = { id: 'forced_aggression', label: 'ВЗРЫВ АГРЕССИИ', color: '#e06c75' };
         state.lastRollValue = '!!';
         state.aggression = 0;
         state.activeLock = 'tenderness';
@@ -187,10 +177,9 @@ function tick(signalPtsd = 0, signalAggr = 0) {
         return state;
     }
 
-    // Active locks
     if (state.activeLock) {
         if (state.activeLock === 'tenderness') {
-            state.lastResult = { id: 'tenderness', label: 'TENDERNESS / REMORSE', color: '#c678dd' };
+            state.lastResult = { id: 'tenderness', label: 'НЕЖНОСТЬ / РАСКАЯНИЕ', color: '#c678dd' };
             state.lastRollValue = '♡';
             state.lockLeft--;
             if (state.lockLeft <= 0) state.activeLock = null;
@@ -198,7 +187,7 @@ function tick(signalPtsd = 0, signalAggr = 0) {
             return state;
         }
         if (state.activeLock === 'adrenaline') {
-            state.lastResult = { id: 'adrenaline_locked', label: 'ADRENALINE LOCK (active)', color: '#ff2d95' };
+            state.lastResult = { id: 'adrenaline_locked', label: 'АДРЕНАЛИНОВЫЙ ЛОК (активен)', color: '#ff2d95' };
             state.lastRollValue = '🔒';
             state.lockLeft--;
             if (state.lockLeft <= 0) state.activeLock = null;
@@ -206,14 +195,13 @@ function tick(signalPtsd = 0, signalAggr = 0) {
             return state;
         }
         if (state.activeLock === 'depression_inertia') {
-            state.lastResult = { id: 'static', label: 'STATIC (inertia holds)', color: '#555' };
+            state.lastResult = { id: 'static', label: 'СТАТИКА (инерция)', color: '#555' };
             state.lastRollValue = '—';
             saveState(state);
             return state;
         }
     }
 
-    // Roll
     const roll = rollD20(state.lastRolls);
     state.lastRolls.push(roll);
     if (state.lastRolls.length > 5) state.lastRolls.shift();
@@ -229,14 +217,13 @@ function tick(signalPtsd = 0, signalAggr = 0) {
     const result = resolveRoll(roll, table);
     state.lastResult = { ...result };
 
-    // Post-roll
     if (state.phase === 'mania' || state.phase === 'mixed') {
         if (result.id === 'void') state.aggression = Math.min(10, state.aggression + 1);
         if (result.id === 'adrenaline') { state.activeLock = 'adrenaline'; state.lockLeft = 3; }
         if (result.id === 'impulsive') {
             state.lastResult.label = state.aggression >= 5
-                ? 'IMPULSIVE BEHAVIOR (→ negative)'
-                : 'IMPULSIVE BEHAVIOR (→ positive)';
+                ? 'ИМПУЛЬСИВНОЕ ПОВЕДЕНИЕ (→ негатив)'
+                : 'ИМПУЛЬСИВНОЕ ПОВЕДЕНИЕ (→ позитив)';
         }
         state.staticStreak = 0;
     }
@@ -269,13 +256,11 @@ function parseSignals(text) {
         for (const m of ptsdMatch) ptsd += parseInt(m.match(/\d+/)[0]);
         cleaned = cleaned.replace(/\[PTSD\+\d+\]/gi, '');
     }
-
     const aggrMatch = cleaned.match(/\[AGGR\+(\d+)\]/gi);
     if (aggrMatch) {
         for (const m of aggrMatch) aggr += parseInt(m.match(/\d+/)[0]);
         cleaned = cleaned.replace(/\[AGGR\+\d+\]/gi, '');
     }
-
     const dayMatch = cleaned.match(/\[DAY\+(\d+)\]/gi);
     if (dayMatch) {
         for (const m of dayMatch) dayAdvance += parseInt(m.match(/\d+/)[0]);
@@ -284,11 +269,39 @@ function parseSignals(text) {
 
     const adrenSatisfied = /\[ADRENALINE_SATISFIED\]/gi.test(cleaned);
     cleaned = cleaned.replace(/\[ADRENALINE_SATISFIED\]/gi, '');
-
     const aggrOutburst = /\[AGGRESSION_OUTBURST\]/gi.test(cleaned);
     cleaned = cleaned.replace(/\[AGGRESSION_OUTBURST\]/gi, '');
 
-    return { ptsd, aggr, dayAdvance, adrenSatisfied, aggrOutburst, cleaned };
+    // Model-written descriptions
+    let rollDesc = '';
+    const rollDescMatch = cleaned.match(/\[ROLL_DESC:\s*(.*?)\]/si);
+    if (rollDescMatch) {
+        rollDesc = rollDescMatch[1].trim();
+        cleaned = cleaned.replace(/\[ROLL_DESC:\s*.*?\]/si, '');
+    }
+
+    let clinicalNote = '';
+    const clinicalMatch = cleaned.match(/\[CLINICAL:\s*(.*?)\]/si);
+    if (clinicalMatch) {
+        clinicalNote = clinicalMatch[1].trim();
+        cleaned = cleaned.replace(/\[CLINICAL:\s*.*?\]/si, '');
+    }
+
+    let ptsdNote = '';
+    const ptsdNoteMatch = cleaned.match(/\[PTSD_NOTE:\s*(.*?)\]/si);
+    if (ptsdNoteMatch) {
+        ptsdNote = ptsdNoteMatch[1].trim();
+        cleaned = cleaned.replace(/\[PTSD_NOTE:\s*.*?\]/si, '');
+    }
+
+    let aggrNote = '';
+    const aggrNoteMatch = cleaned.match(/\[AGGR_NOTE:\s*(.*?)\]/si);
+    if (aggrNoteMatch) {
+        aggrNote = aggrNoteMatch[1].trim();
+        cleaned = cleaned.replace(/\[AGGR_NOTE:\s*.*?\]/si, '');
+    }
+
+    return { ptsd, aggr, dayAdvance, adrenSatisfied, aggrOutburst, rollDesc, clinicalNote, ptsdNote, aggrNote, cleaned };
 }
 
 // ============================
@@ -306,7 +319,6 @@ function transitionPhase(state, newPhase) {
     state.staticStreak = 0;
     state.activeLock = null;
     state.lockLeft = 0;
-
     if (newPhase === 'mania') {
         state.phaseMinDays = 14 + Math.floor(Math.random() * 8);
     } else if (newPhase === 'depression') {
@@ -336,7 +348,9 @@ function renderTracker(state) {
         : state.lastRollValue === '—' ? '#555' : '#c8ff00';
 
     const resultColor = state.lastResult ? state.lastResult.color : '#666';
-    const resultLabel = state.lastResult ? state.lastResult.label : 'NONE';
+    const resultLabel = state.lastResult ? state.lastResult.label : 'НЕТ';
+    const rollDesc = state.rollDesc || '';
+    const clinicalNote = state.clinicalNote || '';
     const ptsdPct = (state.ptsd / 10) * 100;
     const aggrPct = (state.aggression / 10) * 100;
 
@@ -345,28 +359,28 @@ function renderTracker(state) {
     const ptsdValColor = isDepression ? '#555' : '#c8ff00';
     const aggrValColor = isDepression ? '#555' : '#ff2d95';
 
-    let lockText = 'NONE';
+    let lockText = 'НЕТ';
     let lockStyle = 'color:#333;border-color:#222;';
     if (state.activeLock === 'adrenaline') {
-        lockText = `ADRENALINE LOCK — ${state.lockLeft} resp. left`;
+        lockText = `АДРЕНАЛИНОВЫЙ ЛОК — осталось ${state.lockLeft} отв.`;
         lockStyle = 'color:#ff2d95;border-color:#ff2d95;background:rgba(255,45,149,0.08);text-shadow:0 0 8px rgba(255,45,149,0.3);';
     } else if (state.activeLock === 'tenderness') {
-        lockText = `TENDERNESS LOCK — ${state.lockLeft} resp. left`;
+        lockText = `ЛОК НЕЖНОСТИ — осталось ${state.lockLeft} отв.`;
         lockStyle = 'color:#c678dd;border-color:#c678dd;background:rgba(198,120,221,0.08);text-shadow:0 0 8px rgba(198,120,221,0.3);';
     } else if (state.activeLock === 'depression_inertia') {
-        lockText = `DEPRESSION INERTIA — streak ${state.staticStreak}`;
+        lockText = `ИНЕРЦИЯ ДЕПРЕССИИ — серия ${state.staticStreak}`;
         lockStyle = 'color:#00fff7;border-color:#00fff7;background:rgba(0,255,247,0.06);text-shadow:0 0 8px rgba(0,255,247,0.3);';
     }
 
-    function phaseBlock(name, isActive, accent) {
+    function phaseBlock(name, key, isActive, accent) {
         const op = isActive ? '1' : '0.25';
         const bg = isActive ? `rgba(${accent === '#ff2d95' ? '255,45,149' : accent === '#00fff7' ? '0,255,247' : '229,192,123'},0.06)` : '#0d0d12';
         const bb = isActive ? `border-bottom:3px solid ${accent};` : '';
         const nc = isActive ? accent : '#555';
         const ng = isActive ? `text-shadow:0 0 8px ${accent}66;` : '';
-        const dv = isActive ? `DAY ${state.phaseDay}` : '—';
+        const dv = isActive ? `ДЕНЬ ${state.phaseDay}` : '—';
         const dc = isActive ? accent : '#333';
-        const mt = isActive ? `of min. ${state.phaseMinDays}` : '&nbsp;';
+        const mt = isActive ? `из мин. ${state.phaseMinDays}` : '&nbsp;';
         return `<div style="flex:1;padding:12px 10px;text-align:center;border-right:1px dashed #222;opacity:${op};background:${bg};${bb}">
             <div style="font-family:'Courier New',monospace;font-size:13px;color:${nc};letter-spacing:2px;${ng}">${name}</div>
             <div style="font-size:24px;font-weight:bold;color:${dc};line-height:1.1;">${dv}</div>
@@ -377,30 +391,31 @@ function renderTracker(state) {
     const dayPct = Math.min(100, (state.phaseDay / state.phaseMinDays) * 100);
 
     return `
-    <div class="bpt-card" style="border:2px dashed ${borderColor};border-radius:2px;padding:0;background:#0d0d12;font-family:'Courier New',monospace;position:relative;overflow:hidden;margin-top:15px;">
-        <div style="padding:14px 18px 10px;border-bottom:3px solid ${borderColor};display:flex;justify-content:space-between;align-items:baseline;">
-            <span style="font-size:18px;font-weight:bold;color:${headerColor};text-shadow:${headerGlow};letter-spacing:1px;">🏥 CLINICAL CHART</span>
-            <span style="font-size:11px;color:#444;text-decoration:line-through;text-decoration-color:${borderColor};">BIPOLAR DISORDER</span>
-        </div>
+    <details class="bpt-card" style="border:2px dashed ${borderColor};border-radius:2px;padding:0;background:#0d0d12;font-family:'Courier New',monospace;position:relative;overflow:hidden;margin-top:15px;">
+        <summary style="cursor:pointer;padding:14px 18px 10px;border-bottom:3px solid ${borderColor};display:flex;justify-content:space-between;align-items:baseline;outline:none;">
+            <span style="font-size:18px;font-weight:bold;color:${headerColor};text-shadow:${headerGlow};letter-spacing:1px;">🏥 КЛИНИЧЕСКАЯ КАРТА</span>
+            <span style="font-size:11px;color:#444;text-decoration:line-through;text-decoration-color:${borderColor};">БИПОЛЯРНОЕ РАССТРОЙСТВО</span>
+        </summary>
         <div style="display:flex;border-bottom:1px dashed #222;">
-            ${phaseBlock('MANIA', state.phase === 'mania', '#ff2d95')}
-            ${phaseBlock('MIXED', state.phase === 'mixed', '#e5c07b')}
-            ${phaseBlock('DEPRESSION', state.phase === 'depression', '#00fff7')}
+            ${phaseBlock('МАНИЯ', 'mania', state.phase === 'mania', '#ff2d95')}
+            ${phaseBlock('СМЕШАННАЯ', 'mixed', state.phase === 'mixed', '#e5c07b')}
+            ${phaseBlock('ДЕПРЕССИЯ', 'depression', state.phase === 'depression', '#00fff7')}
         </div>
         <div style="padding:14px 18px;border-bottom:1px dashed #1a1a22;">
-            <div style="font-size:12px;color:#ff9d3a;letter-spacing:2px;margin-bottom:10px;font-weight:bold;text-shadow:0 0 8px rgba(255,157,58,0.3);">BEHAVIORAL ROLL</div>
+            <div style="font-size:12px;color:#ff9d3a;letter-spacing:2px;margin-bottom:10px;font-weight:bold;text-shadow:0 0 8px rgba(255,157,58,0.3);">БРОСОК ПОВЕДЕНИЯ</div>
             <div style="display:flex;align-items:center;gap:16px;">
                 <div style="width:58px;height:58px;border:2px solid ${dieColor};border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:${dieColor};text-shadow:0 0 14px ${dieColor}80;background:${dieColor}0a;transform:rotate(-3deg);flex-shrink:0;">${state.lastRollValue ?? '—'}</div>
                 <div>
                     <div style="font-size:16px;font-weight:bold;color:${resultColor};text-shadow:0 0 10px ${resultColor}4d;">${resultLabel}</div>
+                    <div style="font-size:12px;color:#aaa;line-height:1.4;margin-top:4px;">${rollDesc}</div>
                 </div>
             </div>
         </div>
         <div style="padding:14px 18px;border-bottom:1px dashed #1a1a22;">
-            <div style="font-size:12px;color:#ff9d3a;letter-spacing:2px;margin-bottom:10px;font-weight:bold;text-shadow:0 0 8px rgba(255,157,58,0.3);">ACCUMULATORS</div>
+            <div style="font-size:12px;color:#ff9d3a;letter-spacing:2px;margin-bottom:10px;font-weight:bold;text-shadow:0 0 8px rgba(255,157,58,0.3);">НАКОПИТЕЛИ</div>
             <div style="margin-bottom:14px;">
                 <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                    <span style="font-size:13px;color:#00fff7;">PTSD trigger level</span>
+                    <span style="font-size:13px;color:#00fff7;">Уровень ПТСР</span>
                     <span style="font-size:14px;font-weight:bold;color:${ptsdValColor};">${state.ptsd} / 10</span>
                 </div>
                 <div style="width:100%;height:10px;background:#1a1a22;border-radius:2px;position:relative;">
@@ -408,34 +423,40 @@ function renderTracker(state) {
                     <div style="position:absolute;top:-3px;left:40%;width:2px;height:16px;background:#ff2d95;"></div>
                     <div style="position:absolute;top:-3px;left:70%;width:2px;height:16px;background:#ff2d95;"></div>
                 </div>
+                ${state.ptsdNote ? `<div style="font-size:11px;color:#5cc8c4;margin-top:4px;">${state.ptsdNote}</div>` : ''}
             </div>
             <div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                    <span style="font-size:13px;color:#00fff7;">Suppressed aggression</span>
+                    <span style="font-size:13px;color:#00fff7;">Подавленная агрессия</span>
                     <span style="font-size:14px;font-weight:bold;color:${aggrValColor};">${state.aggression} / 10</span>
                 </div>
                 <div style="width:100%;height:10px;background:#1a1a22;border-radius:2px;position:relative;">
                     <div style="height:100%;border-radius:2px;background:${aggrBarColor};width:${aggrPct}%;"></div>
                     <div style="position:absolute;top:-3px;left:70%;width:2px;height:16px;background:#ff2d95;"></div>
                 </div>
+                ${state.aggrNote ? `<div style="font-size:11px;color:#5cc8c4;margin-top:4px;">${state.aggrNote}</div>` : ''}
             </div>
         </div>
         <div style="padding:14px 18px;border-bottom:1px dashed #1a1a22;">
-            <div style="font-size:12px;color:#ff9d3a;letter-spacing:2px;margin-bottom:10px;font-weight:bold;text-shadow:0 0 8px rgba(255,157,58,0.3);">ACTIVE LOCKS</div>
+            <div style="font-size:12px;color:#ff9d3a;letter-spacing:2px;margin-bottom:10px;font-weight:bold;text-shadow:0 0 8px rgba(255,157,58,0.3);">АКТИВНЫЕ ЛОКИ</div>
             <span style="display:inline-block;padding:4px 12px;border-radius:2px;font-size:13px;font-weight:bold;border:1px dashed;transform:rotate(-1deg);${lockStyle}">${lockText}</span>
         </div>
+        <div style="padding:14px 18px;border-bottom:1px dashed #1a1a22;">
+            <div style="font-size:12px;color:#ff9d3a;letter-spacing:2px;margin-bottom:10px;font-weight:bold;text-shadow:0 0 8px rgba(255,157,58,0.3);">КЛИНИЧЕСКАЯ ЗАМЕТКА</div>
+            <p style="font-style:italic;color:#e0e0e0;font-size:12px;line-height:1.5;border-left:3px solid ${borderColor};padding-left:12px;margin:0;">${clinicalNote}</p>
+        </div>
         <div style="padding:10px 18px 14px;">
-            <div style="font-size:12px;color:#ff9d3a;letter-spacing:2px;margin-bottom:8px;font-weight:bold;text-shadow:0 0 8px rgba(255,157,58,0.3);">PHASE PROGRESS</div>
+            <div style="font-size:12px;color:#ff9d3a;letter-spacing:2px;margin-bottom:8px;font-weight:bold;text-shadow:0 0 8px rgba(255,157,58,0.3);">ПРОГРЕСС ФАЗЫ</div>
             <div style="width:100%;height:6px;background:#1a1a22;border-radius:2px;">
                 <div style="height:100%;border-radius:2px;background:${borderColor};width:${dayPct}%;opacity:0.6;"></div>
             </div>
-            <div style="font-size:11px;color:#5cc8c4;margin-top:4px;">Day ${state.phaseDay} of ${state.phaseMinDays} minimum</div>
+            <div style="font-size:11px;color:#5cc8c4;margin-top:4px;">День ${state.phaseDay} из ${state.phaseMinDays} минимум</div>
         </div>
-    </div>`;
+    </details>`;
 }
 
 // ============================
-// PROMPT INJECTION
+// PROMPT INJECTION (stays English for model)
 // ============================
 
 function buildInjection(state) {
@@ -443,7 +464,16 @@ function buildInjection(state) {
     const lockInfo = state.activeLock ? `Lock: ${state.activeLock.toUpperCase()} (${state.lockLeft} left)` : 'No locks';
     return `[BIPOLAR STATE: ${state.phase.toUpperCase()} Day ${state.phaseDay}/${state.phaseMinDays} | PTSD: ${state.ptsd}/10 | Aggression: ${state.aggression}/10 | Roll: ${state.lastRollValue} → ${state.lastResult.label} | ${lockInfo}]
 [Write character behavior consistent with this impulse. Do not announce tracker mechanics in narration.]
-[Signal tags (hidden from chat): [PTSD+N] for PTSD trigger, [AGGR+N] for suppressed aggression, [DAY+N] for time passing, [ADRENALINE_SATISFIED] when need fulfilled, [AGGRESSION_OUTBURST] for violence outburst]`;
+[Signal tags (hidden from chat, write at the very end of your response):
+- [PTSD+N] when a PTSD trigger occurs (N = severity 1-3)
+- [AGGR+N] when character suppresses aggression (N = 1 or 2)
+- [DAY+N] when N in-universe days pass
+- [ADRENALINE_SATISFIED] when adrenaline need fulfilled
+- [AGGRESSION_OUTBURST] when violence outburst occurs
+- [ROLL_DESC: one sentence clinical description of how the current roll manifests in THIS specific scene]
+- [CLINICAL: one sentence clinical note summarizing current patient condition based on what just happened]
+- [PTSD_NOTE: brief note on current PTSD triggers or status, e.g. "взрыв вблизи, полицейские сирены" or "триггеров нет, уровень снижается"]
+- [AGGR_NOTE: brief note on aggression status, e.g. "сброшено после избиения" or "копится — терапия, два пустых броска"]]`;
 }
 
 // ============================
@@ -461,39 +491,39 @@ function buildSettingsHtml() {
             <div class="inline-drawer-content" style="font-size:13px;">
                 <label class="checkbox_label" style="margin-bottom:8px;">
                     <input type="checkbox" id="bpt-enabled" />
-                    <span>Enabled</span>
+                    <span>Включено</span>
                 </label>
                 <label class="checkbox_label" style="margin-bottom:8px;">
                     <input type="checkbox" id="bpt-inject" />
-                    <span>Inject state into prompt</span>
+                    <span>Инъекция в промпт</span>
                 </label>
                 <label class="checkbox_label" style="margin-bottom:12px;">
                     <input type="checkbox" id="bpt-parse" />
-                    <span>Parse model signal tags</span>
+                    <span>Парсить сигналы модели</span>
                 </label>
                 <hr />
-                <b style="display:block;margin:8px 0 6px;">Manual Controls</b>
+                <b style="display:block;margin:8px 0 6px;">Ручное управление</b>
                 <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
-                    <button id="bpt-set-mania" class="menu_button">→ Mania</button>
-                    <button id="bpt-set-mixed" class="menu_button">→ Mixed</button>
-                    <button id="bpt-set-depression" class="menu_button">→ Depression</button>
+                    <button id="bpt-set-mania" class="menu_button">→ Мания</button>
+                    <button id="bpt-set-mixed" class="menu_button">→ Смешанная</button>
+                    <button id="bpt-set-depression" class="menu_button">→ Депрессия</button>
                 </div>
                 <div style="margin-bottom:6px;">
-                    <label style="color:#aaa;">PTSD: <span id="bpt-ptsd-val">0</span>/10</label>
+                    <label style="color:#aaa;">ПТСР: <span id="bpt-ptsd-val">0</span>/10</label>
                     <input type="range" id="bpt-ptsd-slider" min="0" max="10" value="0" style="width:100%;" />
                 </div>
                 <div style="margin-bottom:6px;">
-                    <label style="color:#aaa;">Aggression: <span id="bpt-aggr-val">0</span>/10</label>
+                    <label style="color:#aaa;">Агрессия: <span id="bpt-aggr-val">0</span>/10</label>
                     <input type="range" id="bpt-aggr-slider" min="0" max="10" value="0" style="width:100%;" />
                 </div>
                 <div style="margin-bottom:6px;">
-                    <label style="color:#aaa;">Phase Day: <span id="bpt-day-val">1</span></label>
+                    <label style="color:#aaa;">День фазы: <span id="bpt-day-val">1</span></label>
                     <input type="range" id="bpt-day-slider" min="1" max="50" value="1" style="width:100%;" />
                 </div>
                 <div style="display:flex;gap:6px;margin-top:8px;">
-                    <button id="bpt-advance-day" class="menu_button">+1 Day</button>
-                    <button id="bpt-unlock" class="menu_button">Clear Locks</button>
-                    <button id="bpt-reset" class="menu_button" style="color:#e06c75;">Reset All</button>
+                    <button id="bpt-advance-day" class="menu_button">+1 День</button>
+                    <button id="bpt-unlock" class="menu_button">Снять локи</button>
+                    <button id="bpt-reset" class="menu_button" style="color:#e06c75;">Сбросить всё</button>
                 </div>
             </div>
         </div>
@@ -532,8 +562,34 @@ function onMessageRendered(messageId) {
                         .replace(/\[DAY\+\d+\]/gi, '')
                         .replace(/\[ADRENALINE_SATISFIED\]/gi, '')
                         .replace(/\[AGGRESSION_OUTBURST\]/gi, '')
+                        .replace(/\[ROLL_DESC:\s*.*?\]/gsi, '')
+                        .replace(/\[CLINICAL:\s*.*?\]/gsi, '')
+                        .replace(/\[PTSD_NOTE:\s*.*?\]/gsi, '')
+                        .replace(/\[AGGR_NOTE:\s*.*?\]/gsi, '')
                     );
                 }
+            }
+
+            // Store model-written descriptions
+            if (signals.rollDesc) {
+                const s = getState();
+                s.rollDesc = signals.rollDesc;
+                saveState(s);
+            }
+            if (signals.clinicalNote) {
+                const s = getState();
+                s.clinicalNote = signals.clinicalNote;
+                saveState(s);
+            }
+            if (signals.ptsdNote) {
+                const s = getState();
+                s.ptsdNote = signals.ptsdNote;
+                saveState(s);
+            }
+            if (signals.aggrNote) {
+                const s = getState();
+                s.aggrNote = signals.aggrNote;
+                saveState(s);
             }
 
             if (signals.adrenSatisfied) {
@@ -593,7 +649,6 @@ jQuery(async () => {
             extension_settings[EXT_NAME] = { ...DEFAULT_SETTINGS, chats: {} };
         }
 
-        // Try multiple panel locations
         const settingsHtml = buildSettingsHtml();
         const targets = ['#extensions_settings2', '#extensions_settings', '#extensions_settings_content'];
         let attached = false;
@@ -609,10 +664,9 @@ jQuery(async () => {
         }
 
         if (!attached) {
-            console.warn(`[${EXT_NAME}] Could not find settings panel container. Tried: ${targets.join(', ')}`);
+            console.warn(`[${EXT_NAME}] Could not find settings panel container.`);
         }
 
-        // Settings bindings
         const settings = getSettings();
         $('#bpt-enabled').prop('checked', settings.enabled).on('change', function () {
             getSettings().enabled = $(this).is(':checked');
@@ -627,7 +681,6 @@ jQuery(async () => {
             saveSettingsDebounced();
         });
 
-        // Manual controls
         $('#bpt-set-mania').on('click', () => { transitionPhase(getState(), 'mania'); updateSettingsPanel(getState()); });
         $('#bpt-set-mixed').on('click', () => { transitionPhase(getState(), 'mixed'); updateSettingsPanel(getState()); });
         $('#bpt-set-depression').on('click', () => { transitionPhase(getState(), 'depression'); updateSettingsPanel(getState()); });
@@ -655,7 +708,6 @@ jQuery(async () => {
             updateSettingsPanel(getState());
         });
 
-        // Message rendered hook
         if (event_types.CHARACTER_MESSAGE_RENDERED) {
             eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, onMessageRendered);
             console.log(`[${EXT_NAME}] Hooked CHARACTER_MESSAGE_RENDERED`);
@@ -666,12 +718,7 @@ jQuery(async () => {
             console.warn(`[${EXT_NAME}] No suitable message event found!`);
         }
 
-        // Prompt injection hook
-        const promptEvents = [
-            'CHAT_COMPLETION_PROMPT_READY',
-            'GENERATE_BEFORE_COMBINE_PROMPTS',
-            'GENERATE_AFTER_COMBINE_PROMPTS',
-        ];
+        const promptEvents = ['CHAT_COMPLETION_PROMPT_READY', 'GENERATE_BEFORE_COMBINE_PROMPTS', 'GENERATE_AFTER_COMBINE_PROMPTS'];
         let promptHooked = false;
         for (const evName of promptEvents) {
             if (event_types[evName]) {
@@ -693,9 +740,7 @@ jQuery(async () => {
                 break;
             }
         }
-        if (!promptHooked) {
-            console.warn(`[${EXT_NAME}] No prompt injection event found. Injection disabled.`);
-        }
+        if (!promptHooked) console.warn(`[${EXT_NAME}] No prompt injection event found.`);
 
         console.log(`[${EXT_NAME}] Initialization complete!`);
 
